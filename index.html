@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- Configuración WebApp de iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#f43f5e">
+    
+    <title>Nuestro Cumple Mes ❤️</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        romantic: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            gold: '#d4af37'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Montserrat', 'sans-serif'],
+                        cursive: ['Dancing Script', 'cursive'],
+                        serif: ['Playfair Display', 'Georgia', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            -webkit-overflow-scrolling: touch;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        .pb-safe { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
+        .pt-safe { padding-top: calc(1.5rem + env(safe-area-inset-top)); }
+
+        /* Floating particles */
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0.8) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); opacity: 0; }
+        }
+
+        .heart-particle {
+            position: fixed;
+            bottom: -50px;
+            pointer-events: none;
+            z-index: 1;
+            animation: floatUp 8s linear infinite;
+        }
+
+        /* Envelope Animation */
+        .envelope-container { perspective: 1000px; }
+        .envelope {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background: #fda4af;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: 0 15px 35px rgba(225, 29, 72, 0.25);
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+        .envelope::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 110px solid #f43f5e;
+            transform-origin: top;
+            transition: transform 0.6s ease 0.2s, z-index 0.2s;
+            z-index: 3;
+        }
+        .envelope.open::before {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+        .letter {
+            position: absolute;
+            bottom: 10px; left: 12px; right: 12px;
+            height: 180px;
+            background: #fffdfa;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.6s ease 0.4s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            z-index: 2;
+            overflow: hidden;
+        }
+        .envelope.open .letter {
+            transform: translateY(-130px) scale(1.03);
+            height: auto;
+            max-height: 450px;
+            z-index: 4;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        /* Vinyl Spin */
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-slow { animation: spinSlow 8s linear infinite; }
+
+        /* Keypad ripple */
+        .key-btn:active {
+            background-color: rgba(244, 63, 94, 0.2);
+            transform: scale(0.92);
+        }
+
+        /* Touch spawn heart */
+        .touch-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            animation: popAndFade 1s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;
+        }
+        @keyframes popAndFade {
+            0% { transform: translate(-50%, -50%) scale(0.3) rotate(0deg); opacity: 1; }
+            50% { transform: translate(-50%, -100px) scale(1.3) rotate(15deg); opacity: 0.9; }
+            100% { transform: translate(-50%, -150px) scale(1) rotate(-15deg); opacity: 0; }
+        }
+
+        /* Scratch Canvas */
+        #scratch-canvas {
+            touch-action: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-rose-100 via-romantic-100 to-pink-200 min-h-full font-sans text-gray-800 overflow-x-hidden selection:bg-rose-200">
+
+    <!-- Ambient Floating Hearts Background -->
+    <div id="hearts-container" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <!-- 1. CERRADURA / LOCK SCREEN ESTILO iOS -->
+    <div id="welcome-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-between bg-gradient-to-br from-rose-500 via-romantic-600 to-pink-700 text-white p-6 pt-safe pb-safe transition-all duration-700">
+        <div class="text-center mt-6">
+            <div class="w-16 h-16 mx-auto mb-3 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30 shadow-lg">
+                <i id="lock-icon" data-lucide="lock" class="w-8 h-8 transition-transform duration-300"></i>
+            </div>
+            <h1 class="font-serif text-2xl font-bold">Ingresa el Código de Amor</h1>
+            <p id="lock-hint" class="text-xs text-rose-100/80 mt-1">Nuestra fecha especial (Pista: <span id="hint-code-text">1204</span>)</p>
+            
+            <!-- Dots indicator -->
+            <div class="flex justify-center gap-3 mt-6 mb-2" id="pin-dots">
+                <div class="dot w-3.5 h-3.5 rounded-full border-2 border-white/80 bg-transparent transition-all"></div>
+                <div class="dot w-3.5 h-3.5 rounded-full border-2 border-white/80 bg-transparent transition-all"></div>
+                <div class="dot w-3.5 h-3.5 rounded-full border-2 border-white/80 bg-transparent transition-all"></div>
+                <div class="dot w-3.5 h-3.5 rounded-full border-2 border-white/80 bg-transparent transition-all"></div>
+            </div>
+            <p id="error-msg" class="text-xs text-yellow-200 font-medium h-4 mt-1 opacity-0 transition-opacity">Código incorrecto ❤️ Intenta de nuevo</p>
+        </div>
+
+        <!-- Numeric iOS Keypad -->
+        <div class="w-full max-w-xs grid grid-cols-3 gap-4 mb-6">
+            <button onclick="pressPin('1')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">1</button>
+            <button onclick="pressPin('2')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">2</button>
+            <button onclick="pressPin('3')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">3</button>
+            <button onclick="pressPin('4')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">4</button>
+            <button onclick="pressPin('5')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">5</button>
+            <button onclick="pressPin('6')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">6</button>
+            <button onclick="pressPin('7')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">7</button>
+            <button onclick="pressPin('8')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">8</button>
+            <button onclick="pressPin('9')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">9</button>
+            <div class="h-16"></div>
+            <button onclick="pressPin('0')" class="key-btn h-16 rounded-full bg-white/15 backdrop-blur-md text-2xl font-semibold flex items-center justify-center border border-white/20 active:scale-95 transition-all">0</button>
+            <button onclick="deletePin()" class="h-16 rounded-full text-sm font-medium flex items-center justify-center active:opacity-70 transition-opacity">Borrar</button>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL DE LA APP -->
+    <div id="main-content" class="relative z-10 hidden opacity-0 transition-opacity duration-1000 max-w-lg mx-auto px-4 pt-safe pb-safe space-y-7">
+
+        <!-- REPRODUCTOR MÚSICA Y LYRICS KARAOKE -->
+        <div class="sticky top-2 z-40">
+            <div class="glass-card rounded-2xl p-3 shadow-lg border border-white/80 flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div id="vinyl-disc" class="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-600 to-pink-400 border-2 border-white flex items-center justify-center shadow-md">
+                            <i data-lucide="music" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-800" id="song-title">Nuestra Canción</p>
+                            <p class="text-[10px] text-romantic-600 font-medium" id="song-artist">Artista Especial</p>
+                        </div>
+                    </div>
+                    <button id="music-toggle" onclick="toggleMusic()" class="min-h-[44px] min-w-[44px] bg-rose-500 active:bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md transition-all">
+                        <i id="play-icon" data-lucide="play" class="w-5 h-5 fill-current"></i>
+                    </button>
+                </div>
+                <!-- Sincronizador de Letra Karaoke -->
+                <div class="bg-rose-50/80 rounded-xl p-2 text-center border border-rose-100/80 overflow-hidden min-h-[36px] flex items-center justify-center">
+                    <p id="karaoke-lyric" class="text-xs font-serif italic text-romantic-700 transition-all duration-300 font-medium">
+                        🎵 Toca Play para iniciar nuestra canción...
+                    </p>
+                </div>
+            </div>
+            <audio id="bg-music" loop preload="auto">
+                <source id="music-source" src="" type="audio/mpeg">
+            </audio>
+        </div>
+
+        <!-- ENCABEZADO -->
+        <header class="text-center pt-2">
+            <span class="px-3.5 py-1 rounded-full bg-rose-200/80 text-romantic-700 text-[10px] font-bold uppercase tracking-widest border border-rose-300/50 inline-block mb-2 shadow-sm">
+                Feliz Aniversario 💕
+            </span>
+            <h1 class="font-serif text-3xl font-bold text-gray-900 mb-1">
+                <span id="partner-name-1">Ella</span> & <span id="partner-name-2">Él</span>
+            </h1>
+            <p class="font-cursive text-2xl text-romantic-600" id="header-quote">"Cada segundo a tu lado es mágico"</p>
+        </header>
+
+        <!-- 3. CONTADOR DE TIEMPO EN VIVO -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl text-center border border-white/80">
+            <h2 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center justify-center gap-1.5">
+                <i data-lucide="clock" class="w-4 h-4 text-romantic-500"></i>
+                Tiempo juntos construyendo nuestra historia
+            </h2>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="bg-rose-50/90 p-2.5 rounded-2xl border border-rose-100">
+                    <span id="count-years" class="block font-bold text-2xl text-romantic-600">0</span>
+                    <span class="text-[9px] text-gray-500 uppercase font-semibold">Años</span>
+                </div>
+                <div class="bg-rose-50/90 p-2.5 rounded-2xl border border-rose-100">
+                    <span id="count-months" class="block font-bold text-2xl text-romantic-600">0</span>
+                    <span class="text-[9px] text-gray-500 uppercase font-semibold">Meses</span>
+                </div>
+                <div class="bg-rose-50/90 p-2.5 rounded-2xl border border-rose-100">
+                    <span id="count-days" class="block font-bold text-2xl text-romantic-600">0</span>
+                    <span class="text-[9px] text-gray-500 uppercase font-semibold">Días</span>
+                </div>
+                <div class="bg-rose-50/90 p-2.5 rounded-2xl border border-rose-100">
+                    <span id="count-hours" class="block font-bold text-2xl text-romantic-600">00</span>
+                    <span class="text-[9px] text-gray-500 uppercase font-semibold">Horas</span>
+                </div>
+                <div class="bg-rose-50/90 p-2.5 rounded-2xl border border-rose-100">
+                    <span id="count-minutes" class="block font-bold text-2xl text-romantic-600">00</span>
+                    <span class="text-[9px] text-gray-500 uppercase font-semibold">Min</span>
+                </div>
+                <div class="bg-rose-50/90 p-2.5 rounded-2xl border border-rose-100">
+                    <span id="count-seconds" class="block font-bold text-2xl text-romantic-600">00</span>
+                    <span class="text-[9px] text-gray-500 uppercase font-semibold">Seg</span>
+                </div>
+            </div>
+            <p class="mt-3 text-[10px] text-gray-400 italic">Desde el <span id="start-date-text">--/--/----</span></p>
+        </section>
+
+        <!-- 4. TARJETA DE RASCADO INTERACTIVA (Scratch-Off Surprise) -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl border border-white/80 text-center">
+            <h2 class="text-lg font-serif font-bold text-gray-800 mb-1 flex items-center justify-center gap-2">
+                <i data-lucide="sparkles" class="w-5 h-5 text-romantic-500"></i>
+                Rasca tu Sorpresa
+            </h2>
+            <p class="text-xs text-gray-500 mb-4">Usa tu dedo para raspar la tarjeta dorada y revelar lo que hay debajo.</p>
+            
+            <div class="relative w-full aspect-[4/3] max-w-sm mx-auto rounded-2xl overflow-hidden shadow-inner border-2 border-rose-200 bg-white">
+                <!-- Capa Oculta (Revelada al raspar) -->
+                <div id="scratch-secret-content" class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-rose-50 to-pink-100">
+                    <img id="scratch-img" src="" alt="Sorpresa" class="w-full h-full object-cover rounded-xl shadow-md hidden">
+                    <div id="scratch-text-container" class="space-y-2 p-2">
+                        <span class="text-3xl">🎁</span>
+                        <h3 id="scratch-title" class="font-cursive text-2xl text-romantic-600 font-bold">¡Sorpresa Eres Increíble!</h3>
+                        <p id="scratch-desc" class="text-xs text-gray-700 font-serif italic">"Premio especial: Una cita romántica completamente sorpresa preparada sólo para ti."</p>
+                    </div>
+                </div>
+                <!-- Capa Canvas Dorada Superior (Se borra al tocar) -->
+                <canvas id="scratch-canvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+            </div>
+        </section>
+
+        <!-- 7. NOTA DE VOZ PERSONALIZADA (iMessage/WhatsApp style) -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl border border-white/80">
+            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <i data-lucide="mic" class="w-4 h-4 text-romantic-500"></i>
+                Nota de Voz Especial
+            </h2>
+            <div class="bg-rose-50/90 rounded-2xl p-4 border border-rose-200 flex items-center gap-3">
+                <button id="voice-play-btn" onclick="toggleVoiceNote()" class="w-12 h-12 bg-romantic-500 text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all flex-shrink-0">
+                    <i id="voice-play-icon" data-lucide="play" class="w-5 h-5 fill-current"></i>
+                </button>
+                <div class="flex-1 space-y-1">
+                    <div class="flex items-center justify-between text-[11px] text-gray-500 font-medium">
+                        <span>Mensaje de amor.m4a</span>
+                        <span id="voice-time">0:00</span>
+                    </div>
+                    <!-- Onda de Audio Animada -->
+                    <div class="flex items-center gap-1 h-6 py-1" id="audio-waveform">
+                        <div class="w-1 bg-rose-300 h-2 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-400 h-4 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-500 h-6 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-300 h-3 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-500 h-5 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-400 h-2 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-300 h-4 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-500 h-6 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-400 h-3 rounded-full transition-all duration-300"></div>
+                        <div class="w-1 bg-rose-300 h-2 rounded-full transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+            <audio id="voice-audio" preload="auto">
+                <source id="voice-source" src="" type="audio/mpeg">
+            </audio>
+        </section>
+
+        <!-- 9. CARTA DE AMOR EN SOBRE ANIMADO -->
+        <section class="flex flex-col items-center justify-center py-2">
+            <h2 class="text-lg font-serif font-bold text-gray-800 mb-1 text-center flex items-center gap-2">
+                <i data-lucide="mail-open" class="w-5 h-5 text-romantic-500"></i>
+                Una Carta Para Ti
+            </h2>
+            <p class="text-xs text-gray-500 mb-5 text-center">(Toca el sobre para desplegarla)</p>
+
+            <div class="envelope-container my-2">
+                <div id="envelope" class="envelope" onclick="openEnvelope()">
+                    <div class="absolute inset-0 flex items-center justify-center text-white z-10 pointer-events-none">
+                        <div class="w-12 h-12 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center border border-white/40">
+                            <i data-lucide="heart" class="w-6 h-6 fill-current text-white"></i>
+                        </div>
+                    </div>
+                    <div id="letter" class="letter">
+                        <h3 class="font-cursive text-2xl text-romantic-600 font-bold mb-2 border-b border-rose-100 pb-1" id="letter-title">Mi Amor,</h3>
+                        <div id="letter-body" class="text-xs text-gray-700 leading-relaxed space-y-2 font-serif italic"></div>
+                        <p class="text-right font-cursive text-base text-romantic-600 mt-4 font-bold" id="letter-signature">Para siempre ❤️</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. NUESTRO PUNTO DE ENCUENTRO Y TIMELINE -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl border border-white/80 space-y-4">
+            <h2 class="text-lg font-serif font-bold text-gray-800 text-center flex items-center justify-center gap-2">
+                <i data-lucide="map-pin" class="w-5 h-5 text-romantic-500"></i>
+                Nuestros Lugares & Historia
+            </h2>
+
+            <!-- Tarjeta de Mapa Estilizada -->
+            <div id="map-card" class="bg-gradient-to-tr from-rose-500 to-pink-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                <div class="absolute right-[-10px] bottom-[-10px] opacity-20">
+                    <i data-lucide="compass" class="w-32 h-32 text-white"></i>
+                </div>
+                <span class="text-[10px] uppercase font-bold tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full border border-white/30">Lugar Especial</span>
+                <h3 id="map-place-name" class="font-bold text-lg mt-2">Nuestra Primera Cita</h3>
+                <p id="map-coords" class="text-xs text-rose-100 font-mono mt-0.5">📍 Lat: 40.7128, Long: -74.0060</p>
+                <p id="map-desc" class="text-xs mt-2 text-white/90 italic font-serif">"Aquí comenzó todo, el lugar exacto donde mi mundo cambió."</p>
+            </div>
+
+            <!-- Timeline Vertical -->
+            <div id="timeline-container" class="relative border-l-2 border-rose-300 ml-4 space-y-5 pt-2"></div>
+        </section>
+
+        <!-- 10. PARALLAX POLAROIDS CON GIROSCOPIO -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl border border-white/80">
+            <h2 class="text-lg font-serif font-bold text-gray-800 mb-1 text-center flex items-center justify-center gap-2">
+                <i data-lucide="camera" class="w-5 h-5 text-romantic-500"></i>
+                Galería de Recuerdos 3D
+            </h2>
+            <p class="text-[11px] text-gray-500 text-center mb-5">(Mueve tu iPhone o toca cada foto para voltearla)</p>
+            <div id="gallery-container" class="grid grid-cols-1 gap-5"></div>
+        </section>
+
+        <!-- 6. CAJA DE CUPONES ROMÁNTICOS CANJEABLES -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl border border-white/80">
+            <h2 class="text-lg font-serif font-bold text-gray-800 mb-1 text-center flex items-center justify-center gap-2">
+                <i data-lucide="ticket" class="w-5 h-5 text-romantic-500"></i>
+                Cupones de Amor Canjeables
+            </h2>
+            <p class="text-xs text-gray-500 text-center mb-4">Toca un cupón para canjearlo en la vida real.</p>
+            <div id="coupons-container" class="space-y-3"></div>
+        </section>
+
+        <!-- 11. CÁPSULA DEL TIEMPO BLOQUEADA -->
+        <section class="glass-card rounded-3xl p-5 shadow-xl border border-white/80 text-center">
+            <div class="w-12 h-12 bg-rose-100 text-romantic-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+                <i data-lucide="hourglass" class="w-6 h-6"></i>
+            </div>
+            <h2 class="text-lg font-serif font-bold text-gray-800">Cápsula del Tiempo</h2>
+            <p class="text-xs text-gray-500 mt-1 mb-4">Un regalo especial que se desbloqueará en nuestra próxima gran fecha.</p>
+
+            <div class="bg-rose-50 rounded-2xl p-3 border border-rose-200 inline-block px-6">
+                <span id="capsule-timer" class="font-bold text-xl text-romantic-600 font-mono">00d : 00h : 00m : 00s</span>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-2 italic">Se desbloquea el: <span id="capsule-date-text">--/--/----</span></p>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="text-center py-6 text-gray-500 text-xs">
+            <p class="font-cursive text-2xl text-romantic-600 mb-1">Hecho con todo mi amor para ti ❤️</p>
+            <p class="text-[10px] text-gray-400">Siempre juntos en nuestro camino</p>
+        </footer>
+
+    </div>
+
+    <!-- 12. CONFIGURACIÓN EDITABLE EN JAVASCRIPT (JSON CONFIG) -->
+    <script>
+        const CONFIG = {
+            // Nombres de la pareja
+            partner1: "Mi Niña Hermosa",
+            partner2: "Tu Chico",
+
+            // Código PIN de 4 dígitos para desbloquear
+            passcode: "1204",
+
+            // Fecha de inicio de la relación (Año, Mes [0=Ene, 11=Dic], Día, Hora, Minutos)
+            startDate: new Date(2023, 11, 4, 18, 30, 0),
+
+            // Canción de fondo y letras sincronizadas estilo Karaoke (Lyrics)
+            musicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            songTitle: "Perfect",
+            songArtist: "Ed Sheeran",
+            lyrics: [
+                { time: 0, text: "🎵 Sonando nuestra canción favorita..." },
+                { time: 10, text: "I found a love for me..." },
+                { time: 20, text: "Darling, just dive right in and follow my lead..." },
+                { time: 30, text: "Well, I found a girl, beautiful and sweet..." },
+                { time: 45, text: "I never knew you were the someone waiting for me ❤️" }
+            ],
+
+            // Nota de Voz grabada (Audio MP3/M4A)
+            voiceNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+
+            // Sorpresa de la Tarjeta de Rascado (Scratch-Off)
+            scratchOff: {
+                imageUrl: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=600&q=80", // Si está vacía usa el texto
+                title: "¡Premio Sorpresa! 🎟️",
+                description: "Vale por una cena romántica a la luz de las velas preparada por mí este fin de semana."
+            },
+
+            // Carta de amor
+            letterTitle: "Para el amor de mi vida,",
+            letterBody: `
+                Hola mi cielo,<br><br>
+                Hoy celebramos un mes más de esta hermosa aventura juntos. No hay palabras suficientes para expresarte lo feliz que me haces cada día.<br><br>
+                Gracias por tus sonrisas, por tu apoyo incondicional y por convertir cada momento ordinario en un recuerdo inolvidable.<br><br>
+                Eres mi persona favorita en todo el mundo.
+            `,
+            letterSignature: "Con todo mi amor ❤️",
+
+            // Mapa de "Nuestro Punto de Encuentro"
+            mapPlace: {
+                title: "Lugar de Nuestra Primera Cita",
+                coords: "📍 Lat: -33.4489, Long: -70.6693",
+                description: "Aquel pequeño café donde perdimos la noción del tiempo hablando por horas."
+            },
+
+            // Timeline
+            timeline: [
+                { date: "12 de Diciembre, 2023", title: "Nuestra Primera Cita ☕", description: "El día en que comenzó todo." },
+                { date: "31 de Diciembre, 2023", title: "Año Nuevo Juntos 🎆", description: "Nuestro primer abrazo de medianoche." },
+                { date: "14 de Febrero, 2024", title: "Primer Viaje Juntos 🚗", description: "Un fin de semana inolvidable." }
+            ],
+
+            // Fotos Polaroid con efecto Parallax
+            gallery: [
+                { url: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=600&q=80", caption: "Tu Sonrisa", note: "La razón de mi alegría diaria." },
+                { url: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=600&q=80", caption: "Atardecer Juntos", note: "Contigo el tiempo no pasa." }
+            ],
+
+            // Cupones Románticos Canjeables
+            coupons: [
+                { id: 1, title: "Vale por un masaje relajante 💆‍♀️", desc: "Válido por 30 minutos de paz total." },
+                { id: 2, title: "Vale por tu postre favorito 🍦", desc: "Voy a comprártelo donde tú pidas." },
+                { id: 3, title: "Vale por elegir la película 🎬", desc: "Sin protestar durante toda la función." }
+            ],
+
+            // Fecha de desbloqueo de la Cápsula del Tiempo
+            capsuleUnlockDate: new Date(2027, 0, 1, 0, 0, 0)
+        };
+
+        /* ==========================================================================
+           LOGICA DE APLICACIÓN E INTERACCIÓN iOS
+           ========================================================================== */
+
+        let enteredPin = "";
+        let isMusicPlaying = false;
+
+        // Vibración háptica simulada para iOS
+        function triggerHaptic() {
+            if ("vibrate" in navigator) {
+                navigator.vibrate(15);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Configurar Textos Iniciales
+            document.getElementById('partner-name-1').innerText = CONFIG.partner1;
+            document.getElementById('partner-name-2').innerText = CONFIG.partner2;
+            document.getElementById('hint-code-text').innerText = CONFIG.passcode;
+            document.getElementById('letter-title').innerText = CONFIG.letterTitle;
+            document.getElementById('letter-body').innerHTML = CONFIG.letterBody;
+            document.getElementById('letter-signature').innerText = CONFIG.letterSignature;
+            document.getElementById('song-title').innerText = CONFIG.songTitle;
+            document.getElementById('song-artist').innerText = CONFIG.songArtist;
+
+            // Fuentes de Audio
+            document.getElementById('music-source').src = CONFIG.musicUrl;
+            document.getElementById('bg-music').load();
+            document.getElementById('voice-source').src = CONFIG.voiceNoteUrl;
+            document.getElementById('voice-audio').load();
+
+            // Cargar mapa, cupones, galería y timeline
+            document.getElementById('map-place-name').innerText = CONFIG.mapPlace.title;
+            document.getElementById('map-coords').innerText = CONFIG.mapPlace.coords;
+            document.getElementById('map-desc').innerText = `"${CONFIG.mapPlace.description}"`;
+
+            renderCoupons();
+            renderGallery();
+            renderTimeline();
+            initScratchCard();
+            createHearts();
+
+            // Formatear Fecha Inicial
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('start-date-text').innerText = CONFIG.startDate.toLocaleDateString('es-ES', options);
+            document.getElementById('capsule-date-text').innerText = CONFIG.capsuleUnlockDate.toLocaleDateString('es-ES', options);
+
+            // Temporizadores
+            updateCounter();
+            setInterval(updateCounter, 1000);
+            updateCapsuleTimer();
+            setInterval(updateCapsuleTimer, 1000);
+
+            // Escuchar toques en la pantalla para lluvia de corazones (Efecto 10)
+            window.addEventListener('touchstart', spawnTouchHeart, false);
+            // Escuchar giroscopio para efecto Parallax
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientation', handleGyro, false);
+            }
+        });
+
+        /* 1 & 2. CERRADURA Y TECLADO PIN estilo iOS */
+        function pressPin(num) {
+            triggerHaptic();
+            if (enteredPin.length < 4) {
+                enteredPin += num;
+                updatePinDots();
+            }
+
+            if (enteredPin.length === 4) {
+                if (enteredPin === CONFIG.passcode) {
+                    unlockApp();
+                } else {
+                    showPinError();
+                }
+            }
+        }
+
+        function deletePin() {
+            triggerHaptic();
+            if (enteredPin.length > 0) {
+                enteredPin = enteredPin.slice(0, -1);
+                updatePinDots();
+            }
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('#pin-dots .dot');
+            dots.forEach((dot, index) => {
+                if (index < enteredPin.length) {
+                    dot.classList.remove('bg-transparent');
+                    dot.classList.add('bg-white');
+                } else {
+                    dot.classList.add('bg-transparent');
+                    dot.classList.remove('bg-white');
+                }
+            });
+        }
+
+        function showPinError() {
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.classList.remove('opacity-0');
+            setTimeout(() => {
+                enteredPin = "";
+                updatePinDots();
+                errorMsg.classList.add('opacity-0');
+            }, 1000);
+        }
+
+        function unlockApp() {
+            document.getElementById('lock-icon').setAttribute('data-lucide', 'lock-keyhole-open');
+            lucide.createIcons();
+
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#f43f5e', '#fda4af', '#e11d48', '#ffffff']
+            });
+
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const mainContent = document.getElementById('main-content');
+
+            welcomeScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                welcomeScreen.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                setTimeout(() => mainContent.classList.remove('opacity-0'), 50);
+            }, 700);
+
+            // Autoplay Audio en Safari
+            toggleMusic();
+        }
+
+        /* 3. CONTADOR DE TIEMPO */
+        function updateCounter() {
+            const now = new Date();
+            const diff = now - CONFIG.startDate;
+            if (diff < 0) return;
+
+            const seconds = Math.floor((diff / 1000) % 60);
+            const minutes = Math.floor((diff / 1000 / 60) % 60);
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const days = Math.floor((diff / (1000 * 60 * 60 * 24)) % 30.4375);
+            const months = Math.floor((diff / (1000 * 60 * 60 * 24 * 30.4375)) % 12);
+            const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+
+            document.getElementById('count-years').innerText = years;
+            document.getElementById('count-months').innerText = months;
+            document.getElementById('count-days').innerText = Math.floor(days);
+            document.getElementById('count-hours').innerText = hours.toString().padStart(2, '0');
+            document.getElementById('count-minutes').innerText = minutes.toString().padStart(2, '0');
+            document.getElementById('count-seconds').innerText = seconds.toString().padStart(2, '0');
+        }
+
+        /* 4. TARJETA DE RASCADO (SCRATCH-OFF CANVAS) */
+        function initScratchCard() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Configurar Sorpresa Oculta
+            if(CONFIG.scratchOff.imageUrl) {
+                const img = document.getElementById('scratch-img');
+                img.src = CONFIG.scratchOff.imageUrl;
+                img.classList.remove('hidden');
+                document.getElementById('scratch-text-container').classList.add('hidden');
+            } else {
+                document.getElementById('scratch-title').innerText = CONFIG.scratchOff.title;
+                document.getElementById('scratch-desc').innerText = `"${CONFIG.scratchOff.description}"`;
+            }
+
+            function resizeCanvas() {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                
+                // Pintar Capa Dorada Superior
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, '#d4af37');
+                grad.addColorStop(0.5, '#f3e5ab');
+                grad.addColorStop(1, '#aa7c11');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Texto sobre el canvas
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('✨ Rasca con tu dedo aquí ✨', canvas.width / 2, canvas.height / 2);
+            }
+
+            setTimeout(resizeCanvas, 300);
+
+            let isScratching = false;
+
+            function scratch(e) {
+                if (!isScratching) return;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches ? e.touches[0] : e;
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            canvas.addEventListener('mousedown', (e) => { isScratching = true; scratch(e); });
+            canvas.addEventListener('touchstart', (e) => { isScratching = true; scratch(e); });
+            window.addEventListener('mousemove', scratch);
+            canvas.addEventListener('touchmove', scratch);
+            window.addEventListener('mouseup', () => isScratching = false);
+            canvas.addEventListener('touchend', () => isScratching = false);
+        }
+
+        /* 8. MÚSICA & KARAOKE LYRICS */
+        function toggleMusic() {
+            triggerHaptic();
+            const music = document.getElementById('bg-music');
+            const playIcon = document.getElementById('play-icon');
+            const vinyl = document.getElementById('vinyl-disc');
+
+            if (music.paused) {
+                music.play().then(() => {
+                    isMusicPlaying = true;
+                    playIcon.setAttribute('data-lucide', 'pause');
+                    vinyl.classList.add('spin-slow');
+                    lucide.createIcons();
+                }).catch(console.log);
+            } else {
+                music.pause();
+                isMusicPlaying = false;
+                playIcon.setAttribute('data-lucide', 'play');
+                vinyl.classList.remove('spin-slow');
+                lucide.createIcons();
+            }
+        }
+
+        // Actualizar Letra de Canción estilo Spotify Karaoke
+        document.getElementById('bg-music').addEventListener('timeupdate', function() {
+            const currentTime = this.currentTime;
+            const lyrics = CONFIG.lyrics;
+            let currentText = lyrics[0].text;
+
+            for (let i = 0; i < lyrics.length; i++) {
+                if (currentTime >= lyrics[i].time) {
+                    currentText = lyrics[i].text;
+                }
+            }
+            document.getElementById('karaoke-lyric').innerText = currentText;
+        });
+
+        /* 7. NOTA DE VOZ PLAYER */
+        function toggleVoiceNote() {
+            triggerHaptic();
+            const voice = document.getElementById('voice-audio');
+            const icon = document.getElementById('voice-play-icon');
+            const bgMusic = document.getElementById('bg-music');
+
+            if (voice.paused) {
+                if (!bgMusic.paused) bgMusic.pause(); // Pausar música de fondo si suena
+                voice.play();
+                icon.setAttribute('data-lucide', 'pause');
+            } else {
+                voice.pause();
+                icon.setAttribute('data-lucide', 'play');
+            }
+            lucide.createIcons();
+        }
+
+        document.getElementById('voice-audio').addEventListener('timeupdate', function() {
+            const mins = Math.floor(this.currentTime / 60);
+            const secs = Math.floor(this.currentTime % 60).toString().padStart(2, '0');
+            document.getElementById('voice-time').innerText = `${mins}:${secs}`;
+        });
+
+        /* 9. CARTA DE AMOR EN SOBRE */
+        function openEnvelope() {
+            triggerHaptic();
+            const envelope = document.getElementById('envelope');
+            envelope.classList.toggle('open');
+            if (envelope.classList.contains('open')) {
+                confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } });
+            }
+        }
+
+        /* 6. CAJA DE CUPONES CANJEABLES */
+        function renderCoupons() {
+            const container = document.getElementById('coupons-container');
+            container.innerHTML = CONFIG.coupons.map(coupon => `
+                <div id="coupon-${coupon.id}" onclick="redeemCoupon(${coupon.id})" 
+                     class="bg-white/90 rounded-2xl p-4 shadow-sm border border-rose-200 flex items-center justify-between active:scale-95 transition-all cursor-pointer">
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800">${coupon.title}</h4>
+                        <p class="text-xs text-gray-500 mt-0.5">${coupon.desc}</p>
+                    </div>
+                    <span class="status-tag px-3 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-romantic-600 border border-rose-200 flex-shrink-0">
+                        CANJEAR
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function redeemCoupon(id) {
+            triggerHaptic();
+            const coupon = document.getElementById(`coupon-${id}`);
+            const tag = coupon.querySelector('.status-tag');
+            
+            tag.innerText = "¡CANJEADO! 🎉";
+            tag.className = "status-tag px-3 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 flex-shrink-0";
+            coupon.classList.add('bg-green-50/50', 'border-green-200');
+
+            confetti({ particleCount: 20, spread: 40, origin: { y: 0.8 } });
+        }
+
+        /* 10. POLAROIDS PARALLAX CON GIROSCOPIO & FLIP */
+        function renderGallery() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = CONFIG.gallery.map(item => `
+                <div class="polaroid-item transition-transform duration-200">
+                    <div class="bg-white p-3 rounded-2xl shadow-lg border border-gray-100" onclick="this.classList.toggle('rotate-y-180')">
+                        <div class="w-full h-64 rounded-xl overflow-hidden bg-gray-100">
+                            <img src="${item.url}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/ffe4e6/e11d48?text=Foto+Rom%C3%A1ntica'">
+                        </div>
+                        <div class="pt-3 text-center">
+                            <p class="font-cursive text-2xl text-gray-800 font-bold">${item.caption}</p>
+                            <p class="text-xs text-romantic-600 italic font-serif mt-1">"${item.note}"</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleGyro(e) {
+            const gamma = e.gamma || 0; // Giro izquierda/derecha
+            const polaroids = document.querySelectorAll('.polaroid-item');
+            polaroids.forEach(card => {
+                card.style.transform = `rotate(${gamma * 0.15}deg)`;
+            });
+        }
+
+        /* 5. TIMELINE */
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = CONFIG.timeline.map(item => `
+                <div class="relative pl-6">
+                    <div class="absolute -left-[13px] top-1 w-6 h-6 rounded-full bg-rose-500 border-2 border-white shadow flex items-center justify-center text-white">
+                        <i data-lucide="heart" class="w-3 h-3 fill-current"></i>
+                    </div>
+                    <div class="bg-rose-50/80 rounded-2xl p-3.5 shadow-sm border border-rose-100">
+                        <span class="text-[9px] font-bold text-romantic-600 uppercase tracking-wider">${item.date}</span>
+                        <h4 class="text-sm font-bold text-gray-800 mt-0.5">${item.title}</h4>
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">${item.description}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        /* 10. LLUVIA DE CORAZONES AL TOCAR LA PANTALLA */
+        function spawnTouchHeart(e) {
+            const touch = e.touches[0];
+            const heart = document.createElement('div');
+            heart.className = 'touch-heart text-2xl';
+            heart.innerText = ['❤️', '💖', '💕', '🌸'][Math.floor(Math.random() * 4)];
+            heart.style.left = `${touch.clientX}px`;
+            heart.style.top = `${touch.clientY}px`;
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 1000);
+        }
+
+        /* 11. CÁPSULA DEL TIEMPO TEMPORIZADOR */
+        function updateCapsuleTimer() {
+            const now = new Date();
+            const diff = CONFIG.capsuleUnlockDate - now;
+
+            if (diff <= 0) {
+                document.getElementById('capsule-timer').innerText = "¡DESBLOQUEADA!";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / 1000 / 60) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            document.getElementById('capsule-timer').innerText = 
+                `${days}d : ${hours.toString().padStart(2,'0')}h : ${minutes.toString().padStart(2,'0')}m : ${seconds.toString().padStart(2,'0')}s`;
+        }
+
+        // Corazones de Fondo
+        function createHearts() {
+            const container = document.getElementById('hearts-container');
+            for (let i = 0; i < 12; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-particle';
+                heart.innerText = '❤️';
+                heart.style.left = `${Math.random() * 100}vw`;
+                heart.style.animationDuration = `${6 + Math.random() * 6}s`;
+                heart.style.animationDelay = `${Math.random() * 5}s`;
+                heart.style.fontSize = `${12 + Math.random() * 12}px`;
+                container.appendChild(heart);
+            }
+        }
+    </script>
+</body>
+</html>
